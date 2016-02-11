@@ -1,6 +1,7 @@
 import com.sun.deploy.util.StringUtils;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.util.*;
 
 /**
@@ -9,7 +10,7 @@ import java.util.*;
 public class VariablesAndValues {
 
     public static void main(String[] args) throws IOException {
-        String fileName = "/Users/Pankajan/Edinburgh/Research_Source/Result/log_Ghost"; //+Projects.METEOR;
+        String fileName = "/Users/Pankajan/Edinburgh/Research_Source/Result/log_" + Projects.METEOR;
         VariablesAndValues variablesAndValues = new VariablesAndValues();
         variablesAndValues.analyze(fileName+ ".txt");
     }
@@ -110,11 +111,10 @@ public class VariablesAndValues {
     }
 
 
-    private void printResults(String fileName, Map<String, Map<String, List<String>>> result, Map<String, Integer> methodCountResult) throws FileNotFoundException, UnsupportedEncodingException {
+    private void printResults(String fileName, Map<String, Map<String, List<String>>> result, Map<String, Integer> methodCountResult) throws IOException {
         File file = new File(fileName + "_summary_results.txt");
-        if(file.exists()){
-            file.delete();
-        }
+        Files.deleteIfExists(file.toPath());
+
         PrintWriter writer = new PrintWriter(fileName + "_summary_results.txt", "UTF-8");
         writer.println("Method Location,No.of Calls of the Method,Variable Name,Unique Values,Total No.of Calls of the Variable,Values");
 

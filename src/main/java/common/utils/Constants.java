@@ -17,6 +17,8 @@ public class Constants {
     public static final String [] CURRENT_PROJECTS = new String[] {ACE, EXPRESS, LESS, LODASH, METEOR, MOMENT, UNDERSCORE};
 
     public static final String RESULT_ROOT = "/Users/Pankajan/Edinburgh/Research_Source/Result/";
+    public static final String RESULT_OFFICE_ROOT = "/disk/scratch/";
+
     public static final String SUMMARY_FOLDER = "summary/";
     public static final String RAW_FOLDER = "raw/";
     public static final String FILTERED_VARIABLE_LIST_FOLDER = "filtered_variable_list/";

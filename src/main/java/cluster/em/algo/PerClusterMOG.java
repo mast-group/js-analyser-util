@@ -199,6 +199,7 @@ public class PerClusterMOG implements BaseExpectationMaximization {
     private Map<String, List<Double>> loadVariableValues(File root) throws IOException {
         variableNameList = new ArrayList<>();
         Map<String, List<Double>> variableValueMap = new HashMap<>();
+        System.out.println("Loading ROOT Folder "+ root.getAbsolutePath());
         for (File folder : root.listFiles()) {
             System.out.println("Loading folder " + folder.getAbsolutePath());
             for (File file : folder.listFiles()) {

@@ -1,5 +1,4 @@
 import org.apache.commons.io.FileUtils;
-import sun.text.normalizer.UTF16;
 
 import java.io.File;
 import java.io.IOException;

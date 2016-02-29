@@ -324,7 +324,7 @@ public class PerClusterMOG implements BaseExpectationMaximization {
 //                System.out.println("Error");
             }
         }
-        if (currentIteration == 5 || Math.abs(previosSumLogLikelihood - sumLogLikelihood) <= 1000 || sumLogLikelihood >= -5000) {
+        if (currentIteration == MAX_ITERATION || Math.abs(previosSumLogLikelihood - sumLogLikelihood) <= 1000 || sumLogLikelihood >= -5000) {
             isConverged = true;
         }
         previosSumLogLikelihood = sumLogLikelihood;

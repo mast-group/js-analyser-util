@@ -1,3 +1,7 @@
+package variable.summary;
+
+import common.utils.Constants;
+
 import java.io.*;
 import java.nio.file.Files;
 
@@ -45,7 +49,7 @@ public class VariableValuesIntoFiles {
         if (resultSummary.getName().contains("_summary_")) {
             BufferedReader reader = new BufferedReader(new FileReader(resultSummary));
 
-            File resultFolder = new File(path + resultSummary.getName().substring(4, resultSummary.getName().indexOf(".txt_summary_")));
+            File resultFolder = new File(path.split("/summary/")[0] + "/each_variable_file/" + resultSummary.getName().substring(4, resultSummary.getName().indexOf(".txt_summary_")));
             resultFolder.mkdir();
 
             String line;
@@ -121,13 +125,14 @@ public class VariableValuesIntoFiles {
         writer.close();
     }
 
-    static final String ROOT = "/Users/Pankajan/Edinburgh/Research_Source/Result/";
+    static final String ROOT = "/Users/Pankajan/Edinburgh/Research_Source/Result/summary/log_pomelo.txt_summary_results.txt";
 
     public static void main(String[] args) throws IOException {
-        String fileName = "log_" + Projects.LESS + ".txt_summary_results.txt";
+        String fileName = "log_" + Constants.LESS + ".txt_summary_results.txt";
 
         VariableValuesIntoFiles intoFiles = new VariableValuesIntoFiles();
-        intoFiles.saveVariableValuesInSingleFile(ROOT+fileName, 10, 100);
+        intoFiles.saveEachVariableValuesInFiles(ROOT);
+//        intoFiles.saveVariableValuesInSingleFile(ROOT+fileName, 10, 100);
 
     }
 }

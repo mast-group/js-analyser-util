@@ -1,3 +1,6 @@
+package variable.summary;
+
+import common.utils.Constants;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
@@ -19,7 +22,7 @@ public class VariableQuartiles {
         File file = new File(path);
         if(file.isDirectory()) {
             for (File resultSummary : file.listFiles()) {
-                if (resultSummary.getName().contains("_summary_")) {
+                if (!resultSummary.isDirectory() && resultSummary.getName().contains("_summary_") && !resultSummary.getName().startsWith(".")) {
                     saveVariableQuartilesOfOneProjectInSingleFile(resultSummary, thresholdUniqueValues, thresholdTotalValues);
                 }
             }
@@ -35,10 +38,10 @@ public class VariableQuartiles {
      * @throws IOException
      */
     private void saveVariableQuartilesOfOneProjectInSingleFile(File file, int thresholdUniqueValues, int thresholdTotalValues) throws IOException {
-
+        System.out.println("Processing : "+ file.getName());
         BufferedReader reader = new BufferedReader(new FileReader(file));
 
-        File resultFile = new File(new File(file.getParent()).getParent() + "/descriptive_stats/" + file.getName().substring(4, file.getName().indexOf(".txt_summary_")) + "_descriptive_stats.csv");
+        File resultFile = new File(new File(file.getParent()).getParent() + "/descriptive_stats_2/" + file.getName().substring(4, file.getName().indexOf(".txt_summary_")) + "_descriptive_stats.csv");
         Files.deleteIfExists(resultFile.toPath());
 
         PrintWriter writer = new PrintWriter(resultFile, "UTF-8");
@@ -95,13 +98,13 @@ public class VariableQuartiles {
         return normalizedValues;
     }
 
-    static final String ROOT = "/Users/Pankajan/Edinburgh/Research_Source/Result/summary/";
+    static final String ROOT =  Constants.RESULT_ROOT + Constants.SUMMARY_FOLDER;
 
     public static void main(String[] args) throws IOException {
-        String fileName = "log_" + Projects.LODASH + ".txt_summary_results.txt";
+        String fileName = "log_" + Constants.LODASH + ".txt_summary_results.txt";
 
         VariableQuartiles intoFiles = new VariableQuartiles();
-        intoFiles.saveVariableQuartilesInSingleFile(ROOT, 10, 100);
+        intoFiles.saveVariableQuartilesInSingleFile(ROOT, 1, 50);
 
     }
 }

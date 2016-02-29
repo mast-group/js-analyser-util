@@ -1,4 +1,6 @@
-import com.sun.deploy.util.StringUtils;
+package variable.summary;
+
+import common.utils.Constants;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -10,9 +12,20 @@ import java.util.*;
 public class VariablesAndValues {
 
     public static void main(String[] args) throws IOException {
-        String fileName = "/Users/Pankajan/Edinburgh/Research_Source/Result/log_" + Projects.METEOR;
-        VariablesAndValues variablesAndValues = new VariablesAndValues();
-        variablesAndValues.analyze(fileName+ ".txt");
+        /*for (String project : Constants.CURRENT_PROJECTS) {
+            String fileName = "/Users/Pankajan/Edinburgh/Research_Source/Result/raw/log_" + project;
+            variable.summary.VariablesAndValues variablesAndValues = new variable.summary.VariablesAndValues();
+            variablesAndValues.analyze(fileName+ ".txt");
+        }*/
+
+        File folder = new File(Constants.RESULT_ROOT + Constants.RAW_FOLDER);
+        for (File file : folder.listFiles()) {
+            if(!file.isDirectory()) {
+                VariablesAndValues variablesAndValues = new VariablesAndValues();
+                variablesAndValues.analyze(file.getAbsolutePath());
+            }
+        }
+
     }
 
     private void analyze(String fileName) throws IOException {
@@ -115,7 +128,7 @@ public class VariablesAndValues {
         File file = new File(fileName + "_summary_results.txt");
         Files.deleteIfExists(file.toPath());
 
-        PrintWriter writer = new PrintWriter(fileName + "_summary_results.txt", "UTF-8");
+        PrintWriter writer = new PrintWriter(fileName.replace("/raw/", "/summary/") + "_summary_results.txt", "UTF-8");
         writer.println("Method Location,No.of Calls of the Method,Variable Name,Unique Values,Total No.of Calls of the Variable,Values");
 
         System.out.println("RESULT>>> ");

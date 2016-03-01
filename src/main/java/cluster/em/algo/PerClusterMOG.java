@@ -3,9 +3,7 @@ package cluster.em.algo;
 import cluster.em.base.BaseExpectationMaximization;
 import com.google.common.collect.MinMaxPriorityQueue;
 import com.google.common.collect.Ordering;
-import com.google.common.io.Files;
 import common.utils.Constants;
-import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.math3.distribution.NormalDistribution;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
@@ -58,7 +56,7 @@ public class PerClusterMOG implements BaseExpectationMaximization {
     private double previosSumLogLikelihood = 0;
     private boolean isConverged = false;
 
-    private BufferedWriter writer;
+//    private BufferedWriter writer;
     public void execute() throws IOException {
         /**
          * Read variable names from the input file and save them in a Map with project as keys and variable name list as value
@@ -67,10 +65,10 @@ public class PerClusterMOG implements BaseExpectationMaximization {
             if(HOME) {
                 List<String> variableNames = readVariableNameFile();
                 variableValues = loadVariableValues(variableNames);
-                writer = new BufferedWriter(new FileWriter(Constants.RESULT_ROOT+"result.txt"));
+//                writer = new BufferedWriter(new FileWriter(Constants.RESULT_ROOT+"result.txt"));
             } else {
                 variableValues = loadVariableValues(new File(Constants.RESULT_OFFICE_ROOT + Constants.FILTERED_VARIABLE_LIST_FOLDER + Constants.FILTERED_VARIABLE_LIST_FOLDER + Constants.EACH_VARIABLE_FOLDER));
-                writer = new BufferedWriter(new FileWriter(Constants.RESULT_OFFICE_ROOT+"result.txt"));
+//                writer = new BufferedWriter(new FileWriter(Constants.RESULT_OFFICE_ROOT+"result.txt"));
             }
             filterVariables();
             initializeEM(CLUSTER_COUNT, COMPONENT_COUNT);
@@ -103,7 +101,7 @@ public class PerClusterMOG implements BaseExpectationMaximization {
 
     private void printResults() throws IOException {
         for (int k = 1; k <= currentClusterCount; k++) {
-            writer.append("Cluster ").append(String.valueOf(k)).append("\n");
+            System.out.println("Cluster " + k);
             for (Map.Entry<String, Integer> variableCluster : variableClusters.entrySet()) {
                 if (variableCluster.getValue() == k) {
                     String[] components = variableComponents.get(variableCluster.getKey()).split(",");
@@ -117,17 +115,13 @@ public class PerClusterMOG implements BaseExpectationMaximization {
                         builder.append((i1 + 1)).append(" x ").append(i).append(" | ");
                     }
 
-                    writer.append(variableCluster.getKey()).append(" : ").append(builder).append("\n");
+                    System.out.println(variableCluster.getKey() + " : " + builder);
                 }
             }
         }
-        writer.flush();
-        writer.close();
+//        writer.flush();
+//        writer.close();
         }
-
-    private boolean isConverged() {
-        return false;
-    }
 
     private void initializeEM(int clusterCount, int componentCount) {
         currentClusterCount = clusterCount;
@@ -285,9 +279,9 @@ public class PerClusterMOG implements BaseExpectationMaximization {
                         double logProbability = normalDistribution.logDensity(variableValue);
 //                                + currentClusterComponentPriors.get(String.valueOf(i))
 //                                + currentClusterComponentPriors.get(i + "_" + j);
-                        if (logProbability == Double.NEGATIVE_INFINITY) {
+//                        if (logProbability == Double.NEGATIVE_INFINITY) {
 //                            System.out.println("ERROR");
-                        }
+//                        }
                         if (logProbability > valueProbability) {
                             valueProbability = logProbability;
                             component = j;
@@ -320,15 +314,16 @@ public class PerClusterMOG implements BaseExpectationMaximization {
                             variableComponents.put(variable.getKey(), variableComponents.get(variable.getKey()) + "," + entry.getValue());
                     }
                 }
-            } else {
-//                System.out.println("Error");
             }
+//            else {
+//                System.out.println("Error");
+//            }
         }
         if (currentIteration == MAX_ITERATION || Math.abs(previosSumLogLikelihood - sumLogLikelihood) <= 1000 || sumLogLikelihood >= -5000) {
             isConverged = true;
         }
         previosSumLogLikelihood = sumLogLikelihood;
-        writer.append("Log-Likelihood : " + sumLogLikelihood).append("\n");
+        System.out.println("Log-Likelihood : " + sumLogLikelihood);
     }
 
     public void executeMStep() throws IOException {
@@ -349,9 +344,9 @@ public class PerClusterMOG implements BaseExpectationMaximization {
                 if (values != null && values.size() > 1) {
                     double[] valuesInPrimitive = ArrayUtils.toPrimitive(values.toArray(new Double[values.size()]));
                     DescriptiveStatistics descriptiveStatistics = new DescriptiveStatistics(valuesInPrimitive);
-                    if (descriptiveStatistics.getStandardDeviation() <= 0) {
+//                    if (descriptiveStatistics.getStandardDeviation() <= 0) {
 //                        System.out.println("Error");
-                    }
+//                    }
                     if (descriptiveStatistics.getVariance() <= 0) {
                         double[] randomSamples = getRandomSamples();
                         descriptiveStatistics = new DescriptiveStatistics(randomSamples);
@@ -371,9 +366,9 @@ public class PerClusterMOG implements BaseExpectationMaximization {
 
 
         clusterComponentVariableValues = new HashMap<>();
-        writer.append(">>>>>>>>>>>>>>><<<<<<<<<<<<<<").append("\n");
-        writer.append(String.valueOf(currentIteration++)).append("\n");
-        writer.append(">>>>>>>>>>>>>>><<<<<<<<<<<<<<").append("\n");
+        System.out.println(">>>>>>>>>>>>>>><<<<<<<<<<<<<<");
+        System.out.println(String.valueOf(currentIteration++));
+        System.out.println(">>>>>>>>>>>>>>><<<<<<<<<<<<<<");
     }
 
     public static void main(String[] args) throws IOException {

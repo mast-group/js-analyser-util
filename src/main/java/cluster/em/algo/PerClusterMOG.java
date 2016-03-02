@@ -96,12 +96,16 @@ public class PerClusterMOG implements BaseExpectationMaximization {
             executeEStep();
             executeMStep();
         }
-        printResults();
     }
 
     private void printResults() throws IOException {
         for (int k = 1; k <= currentClusterCount; k++) {
-            System.out.println("Cluster " + k);
+            System.out.println("                              Cluster " + k);
+            for (int i=1; i<=currentComponentCount.get(k); i++) {
+                double[] params = currentGaussianParameters.get(k + "_" + i);
+                System.out.print("           Component " + i);
+                System.out.println(" -> Mean : " + params[0] + " , SD : " + params[1]);
+            }
             for (Map.Entry<String, Integer> variableCluster : variableClusters.entrySet()) {
                 if (variableCluster.getValue() == k) {
                     String[] components = variableComponents.get(variableCluster.getKey()).split(",");
@@ -134,10 +138,13 @@ public class PerClusterMOG implements BaseExpectationMaximization {
             currentComponentCount.put(i, componentCount);
             currentClusterComponentPriors.put(String.valueOf(i), Math.log(clusterPrior));
             for (int j = 1; j <= componentCount; j++) {
-                double[] randomSamples = getRandomSamples();
-                DescriptiveStatistics descriptiveStatistics = new DescriptiveStatistics(randomSamples);
-                currentGaussianParameters.put(i + "_" + j, new double[]{descriptiveStatistics.getMean(), descriptiveStatistics.getVariance()});
-                currentClusterComponentPriors.put(i + "_" + j, Math.log(componentPrior));
+                DescriptiveStatistics descriptiveStatistics;
+                do {
+                    double[] randomSamples = getRandomSamples();
+                    descriptiveStatistics = new DescriptiveStatistics(randomSamples);
+                    currentGaussianParameters.put(i + "_" + j, new double[]{descriptiveStatistics.getMean(), descriptiveStatistics.getStandardDeviation()});
+                    currentClusterComponentPriors.put(i + "_" + j, Math.log(componentPrior));
+                } while (Double.isNaN(descriptiveStatistics.getMean()) || Double.isNaN(descriptiveStatistics.getStandardDeviation()));
             }
         }
     }
@@ -344,31 +351,35 @@ public class PerClusterMOG implements BaseExpectationMaximization {
                 if (values != null && values.size() > 1) {
                     double[] valuesInPrimitive = ArrayUtils.toPrimitive(values.toArray(new Double[values.size()]));
                     DescriptiveStatistics descriptiveStatistics = new DescriptiveStatistics(valuesInPrimitive);
-//                    if (descriptiveStatistics.getStandardDeviation() <= 0) {
-//                        System.out.println("Error");
-//                    }
-                    if (descriptiveStatistics.getVariance() <= 0) {
-                        double[] randomSamples = getRandomSamples();
-                        descriptiveStatistics = new DescriptiveStatistics(randomSamples);
-                        currentGaussianParameters.put(i + "_" + j, new double[]{descriptiveStatistics.getMean(), descriptiveStatistics.getVariance()});
+
+                    if (Double.isNaN(descriptiveStatistics.getMean()) || Double.isNaN(descriptiveStatistics.getStandardDeviation()) || descriptiveStatistics.getStandardDeviation() <= 0) {
+                        do {
+                            double[] randomSamples = getRandomSamples();
+                            descriptiveStatistics = new DescriptiveStatistics(randomSamples);
+                            currentGaussianParameters.put(i + "_" + j, new double[]{descriptiveStatistics.getMean(), descriptiveStatistics.getStandardDeviation()});
+                        }
+                        while (Double.isNaN(descriptiveStatistics.getMean()) || Double.isNaN(descriptiveStatistics.getStandardDeviation()));
                     } else {
-                        currentGaussianParameters.put(i + "_" + j, new double[]{descriptiveStatistics.getMean(), descriptiveStatistics.getVariance()});
+                        currentGaussianParameters.put(i + "_" + j, new double[]{descriptiveStatistics.getMean(), descriptiveStatistics.getStandardDeviation()});
                     }
                     currentClusterComponentPriors.put(i + "_" + j, Math.log((values.size() + 1) / clusterVariableValuesTotal));
                 } else {
-                    double[] randomSamples = getRandomSamples();
-                    DescriptiveStatistics descriptiveStatistics = new DescriptiveStatistics(randomSamples);
-                    currentGaussianParameters.put(i + "_" + j, new double[]{descriptiveStatistics.getMean(), descriptiveStatistics.getVariance()});
-                    currentClusterComponentPriors.put(i + "_" + j, Math.log(1 / clusterVariableValuesTotal));
+                    DescriptiveStatistics descriptiveStatistics;
+                    do {
+                        double[] randomSamples = getRandomSamples();
+                        descriptiveStatistics = new DescriptiveStatistics(randomSamples);
+                        currentGaussianParameters.put(i + "_" + j, new double[]{descriptiveStatistics.getMean(), descriptiveStatistics.getStandardDeviation()});
+                        currentClusterComponentPriors.put(i + "_" + j, Math.log(1 / clusterVariableValuesTotal));
+                    } while(Double.isNaN(descriptiveStatistics.getMean()) || Double.isNaN(descriptiveStatistics.getStandardDeviation()));
                 }
             }
         }
 
 
         clusterComponentVariableValues = new HashMap<>();
-        System.out.println(">>>>>>>>>>>>>>><<<<<<<<<<<<<<");
-        System.out.println(String.valueOf(currentIteration++));
-        System.out.println(">>>>>>>>>>>>>>><<<<<<<<<<<<<<");
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>  " + currentIteration++ + "  <<<<<<<<<<<<<<<<<<<<<<<<");
+        printResults();
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<");
     }
 
     public static void main(String[] args) throws IOException {

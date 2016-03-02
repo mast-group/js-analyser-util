@@ -67,7 +67,7 @@ public class PerClusterMOG implements BaseExpectationMaximization {
                 variableValues = loadVariableValues(variableNames);
 //                writer = new BufferedWriter(new FileWriter(Constants.RESULT_ROOT+"result.txt"));
             } else {
-                variableValues = loadVariableValues(new File(Constants.RESULT_OFFICE_ROOT + Constants.FILTERED_VARIABLE_LIST_FOLDER + Constants.FILTERED_VARIABLE_LIST_FOLDER + Constants.EACH_VARIABLE_FOLDER));
+                variableValues = loadVariableValues(new File(Constants.RESULT_OFFICE_ROOT + Constants.FILTERED_VARIABLE_LIST_FOLDER + Constants.EACH_VARIABLE_FOLDER));
 //                writer = new BufferedWriter(new FileWriter(Constants.RESULT_OFFICE_ROOT+"result.txt"));
             }
             filterVariables();

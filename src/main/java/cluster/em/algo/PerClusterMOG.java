@@ -318,6 +318,7 @@ public class PerClusterMOG implements BaseExpectationMaximization {
         }
         sumLogLikelihood /= variableValues.size();
         if (currentIteration == MAX_ITERATION || Math.abs(previosSumLogLikelihood - sumLogLikelihood) <= LOG_LIKELIHOOD_DIFF || sumLogLikelihood >= LOG_LIKELIHOOD_THRESHOLD) {
+            System.out.println("Algorithm converged with iteration " + currentIteration + " loglikelihood different " + Math.abs(previosSumLogLikelihood - sumLogLikelihood) + " and current average log likelihood " + sumLogLikelihood);
             isConverged = true;
         }
         previosSumLogLikelihood = sumLogLikelihood;

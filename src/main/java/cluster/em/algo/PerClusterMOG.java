@@ -15,7 +15,7 @@ import java.util.*;
  * Created by Pankajan on 25/02/2016.
  */
 public class PerClusterMOG implements BaseExpectationMaximization {
-    private static final boolean HOME = false;
+    private static final boolean HOME = true;
     private static final String VARIABLE_FILE_NAME = "50_occurances.csv";
 
     private static final int CLUSTER_COUNT = 12;
@@ -217,7 +217,7 @@ public class PerClusterMOG implements BaseExpectationMaximization {
             do {
                 variableValues = this.variableValues.get(variableNameList.get(ran.nextInt(variableCountBound)));
                 size = variableValues.size();
-            } while (variableValues.size() >= noOfSamples);
+            } while (variableValues.size() < noOfSamples);
             for (int i = 0; i < noOfSamples; i++) {
                 randomSampleValues[i] = variableValues.get(ran.nextInt(size));
             }

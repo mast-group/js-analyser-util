@@ -343,7 +343,7 @@ public class PerClusterMOG implements BaseExpectationMaximization {
             } else {
                 componentCount++;
                 currentComponentCount.put(i, componentCount);
-                currentGaussianParameters.put(i + "_" + componentCount, new double[]{variableValue, 0});
+                currentGaussianParameters.put(i + "_" + componentCount, new double[]{variableValue, 1});
             }
 
         }

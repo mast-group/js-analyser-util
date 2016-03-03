@@ -15,7 +15,7 @@ import java.util.*;
  * Created by Pankajan on 25/02/2016.
  */
 public class PerClusterMOG implements BaseExpectationMaximization {
-    private static final boolean HOME = false;
+    private static final boolean HOME = true;
     private static final String VARIABLE_FILE_NAME = "50_occurances.csv";
 
     private static final int CLUSTER_COUNT = 12;
@@ -39,6 +39,7 @@ public class PerClusterMOG implements BaseExpectationMaximization {
     //Map with variable names as key and their respective clusters as values. Ex: background_tokenizer.js->2481-3510_currentLine -> 1
     private Map<String, Integer> variableClusters = new HashMap<>();
     private Map<String, String> variableComponents = new HashMap<>();
+    private Map<String, Double> variableLogProbability = new HashMap<>();
     //Map with variable cluster_component as key and all the variable values that are assigned to that component as value. Ex: 1_2-> {12, 23, 34, 12.01}
     private Map<String, List<Double>> clusterComponentVariableValues = new HashMap<>();
 
@@ -77,6 +78,7 @@ public class PerClusterMOG implements BaseExpectationMaximization {
                 variableValues = loadVariableValues(new File(Constants.RESULT_OFFICE_ROOT + Constants.FILTERED_VARIABLE_LIST_FOLDER + Constants.EACH_VARIABLE_FOLDER));
 //                writer = new BufferedWriter(new FileWriter(Constants.RESULT_OFFICE_ROOT+"result.txt"));
             }
+            initializeShutdownHook();
             filterVariables();
             initializeEM(CLUSTER_COUNT, COMPONENT_COUNT);
             executeEMAlgorithm();
@@ -84,6 +86,15 @@ public class PerClusterMOG implements BaseExpectationMaximization {
         } catch (IOException e) {
             System.err.println("Error reading variable names file with Exception :" + e.getLocalizedMessage());
         }
+    }
+
+    private void initializeShutdownHook() {
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                isConverged = true;
+            }
+        });
     }
 
     private void filterVariables() {
@@ -103,9 +114,10 @@ public class PerClusterMOG implements BaseExpectationMaximization {
             executeEStep();
             executeMStep();
         }
+        printResults(true);
     }
 
-    private void printResults() throws IOException {
+    private void printResults(boolean isConverged) throws IOException {
         for (int k = 1; k <= currentClusterCount; k++) {
             System.out.println();
             System.out.println("                              Cluster " + k + " with variables  " + clusterVariableCount[k-1]);
@@ -114,9 +126,11 @@ public class PerClusterMOG implements BaseExpectationMaximization {
                 System.out.print("           Component " + i);
                 System.out.println(" -> Mean : " + params[0] + " , SD : " + params[1]);
             }
-           /* for (Map.Entry<String, Integer> variableCluster : variableClusters.entrySet()) {
+            if(isConverged) {
+            for (Map.Entry<String, Integer> variableCluster : variableClusters.entrySet()) {
                 if (variableCluster.getValue() == k) {
-                    String[] components = variableComponents.get(variableCluster.getKey()).split(",");
+                    String variableName = variableCluster.getKey();
+                    String[] components = variableComponents.get(variableName).split(",");
                     int[] componentCount = new int[currentComponentCount.get(variableCluster.getValue())];
                     for (String component : components) {
                         componentCount[Integer.parseInt(component) - 1]++;
@@ -127,9 +141,10 @@ public class PerClusterMOG implements BaseExpectationMaximization {
                         builder.append((i1 + 1)).append(" x ").append(i).append(" | ");
                     }
 
-                    System.out.println(variableProjectMap.get(variableCluster.getKey()) + " -> " + variableCluster.getKey() + " : " + builder);
+                    System.out.println(variableProjectMap.get(variableName) + " -> " + variableName + " : " + builder + " Log-likelihood : "+ variableLogProbability.get(variableName));
                 }
-            }*/
+            }
+            }
         }
 //        writer.flush();
 //        writer.close();
@@ -291,6 +306,7 @@ public class PerClusterMOG implements BaseExpectationMaximization {
     }
 
     public void executeEStep() throws IOException {
+        variableLogProbability = new HashMap<>();
         variableClusters = new HashMap<>();
         variableComponents = new HashMap<>();
         clusterVariableCount = new int[currentClusterCount];
@@ -333,6 +349,8 @@ public class PerClusterMOG implements BaseExpectationMaximization {
                             variableComponents.put(variable.getKey(), variableComponents.get(variable.getKey()) + "," + entry.getValue());
                     }
                 }
+
+                variableLogProbability.put(variable.getKey(), sumLogProbability);
             }
 //            else {
 //                System.out.println("Error");
@@ -410,7 +428,7 @@ public class PerClusterMOG implements BaseExpectationMaximization {
                 if (values != null && values.size() > 1) {
                     double[] valuesInPrimitive = ArrayUtils.toPrimitive(values.toArray(new Double[values.size()]));
                     DescriptiveStatistics descriptiveStatistics = new DescriptiveStatistics(valuesInPrimitive);
-/
+
                     double sd = descriptiveStatistics.getStandardDeviation();
                     if (Double.isNaN(descriptiveStatistics.getStandardDeviation()) || descriptiveStatistics.getStandardDeviation() <= 0) {
                         sd = 1;
@@ -484,7 +502,7 @@ public class PerClusterMOG implements BaseExpectationMaximization {
 
         clusterComponentVariableValues = new HashMap<>();
         System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>  " + currentIteration++ + "  <<<<<<<<<<<<<<<<<<<<<<<<");
-        printResults();
+        printResults(false);
         System.out.println(">>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<");
     }
 

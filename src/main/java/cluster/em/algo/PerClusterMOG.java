@@ -93,7 +93,7 @@ public class PerClusterMOG implements BaseExpectationMaximization {
             @Override
             public void run() {
                 isConverged = true;
-                System.out.println("Killed");
+                System.out.println(resultString);
             }
         });
     }
@@ -118,16 +118,22 @@ public class PerClusterMOG implements BaseExpectationMaximization {
         printResults(true);
     }
 
+
+    StringBuilder resultString;
+
     private void printResults(boolean isConverged) throws IOException {
+        resultString = new StringBuilder("\n\n\n*********************************   Results   ***************************************");
         for (int k = 1; k <= currentClusterCount; k++) {
+            resultString.append("\n").append("                              Cluster " + k + " with variables  " + clusterVariableCount[k-1]).append("\n");
             System.out.println();
             System.out.println("                              Cluster " + k + " with variables  " + clusterVariableCount[k-1]);
             for (int i=1; i<=currentComponentCount.get(k); i++) {
                 double[] params = currentGaussianParameters.get(k + "_" + i);
                 System.out.print("           Component " + i);
                 System.out.println(" -> Mean : " + params[0] + " , SD : " + params[1]);
+                resultString.append("           Component " + i).append("\n").append(" -> Mean : " + params[0] + " , SD : " + params[1]).append("\n");
             }
-            if(isConverged) {
+
             for (Map.Entry<String, Integer> variableCluster : variableClusters.entrySet()) {
                 if (variableCluster.getValue() == k) {
                     String variableName = variableCluster.getKey();
@@ -142,9 +148,8 @@ public class PerClusterMOG implements BaseExpectationMaximization {
                         builder.append((i1 + 1)).append(" x ").append(i).append(" | ");
                     }
 
-                    System.out.println(variableProjectMap.get(variableName) + " -> " + variableName + " : " + builder + " Log-likelihood : "+ variableLogProbability.get(variableName));
+                    resultString.append(variableProjectMap.get(variableName) + " -> " + variableName + " : " + builder + " Log-likelihood : "+ variableLogProbability.get(variableName)).append("\n");
                 }
-            }
             }
         }
 //        writer.flush();

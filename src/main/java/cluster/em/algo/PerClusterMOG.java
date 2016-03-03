@@ -107,7 +107,8 @@ public class PerClusterMOG implements BaseExpectationMaximization {
 
     private void printResults() throws IOException {
         for (int k = 1; k <= currentClusterCount; k++) {
-            System.out.println("                              Cluster " + k);
+            System.out.println();
+            System.out.println("                              Cluster " + k + " with variables  " + clusterVariableCount[k-1]);
             for (int i=1; i<=currentComponentCount.get(k); i++) {
                 double[] params = currentGaussianParameters.get(k + "_" + i);
                 System.out.print("           Component " + i);
@@ -270,6 +271,7 @@ public class PerClusterMOG implements BaseExpectationMaximization {
     public void executeEStep() throws IOException {
         variableClusters = new HashMap<>();
         variableComponents = new HashMap<>();
+        clusterVariableCount = new int[currentClusterCount];
         double sumLogLikelihood = 0;
         for (Map.Entry<String, List<Double>> variable : variableValues.entrySet()) {
 //            System.out.println("Variable : " + variable.getKey());

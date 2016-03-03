@@ -148,6 +148,7 @@ public class PerClusterMOG implements BaseExpectationMaximization {
                         builder.append((i1 + 1)).append(" x ").append(i).append(" | ");
                     }
 
+                    System.out.println(variableProjectMap.get(variableName) + " -> " + variableName + " : " + builder + " Log-likelihood : "+ variableLogProbability.get(variableName));
                     resultString.append(variableProjectMap.get(variableName) + " -> " + variableName + " : " + builder + " Log-likelihood : "+ variableLogProbability.get(variableName)).append("\n");
                 }
             }

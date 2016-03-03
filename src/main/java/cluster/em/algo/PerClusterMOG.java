@@ -20,8 +20,11 @@ public class PerClusterMOG implements BaseExpectationMaximization {
     private static final int COMPONENT_COUNT = 3;
     private static final int MAX_ITERATION = 1000;
     public static final int SAMPLE_SIZE = 1000;
-    private static final boolean HOME = false;
-    private static final double COMPONENT_PROBABILITY_THRESHOLD = -1.301;
+    private static final boolean HOME = true;
+    private static final double COMPONENT_PROBABILITY_THRESHOLD = -10;
+    public static final double LOG_LIKELIHOOD_DIFF = 0.001;
+    public static final int LOG_LIKELIHOOD_THRESHOLD = -5;
+    private static final int MAX_COMPONENTS = 20;
 
     private MinMaxPriorityQueue<Double> minimumValues = MinMaxPriorityQueue.expectedSize(10000).maximumSize(10000).create();
     private MinMaxPriorityQueue<Double> maximumValues = MinMaxPriorityQueue.orderedBy(Ordering.natural().reverse()).expectedSize(10000).maximumSize(10000).create();
@@ -275,14 +278,22 @@ public class PerClusterMOG implements BaseExpectationMaximization {
             Map<Double, Integer> selectedComponents = new HashMap<>();
             for (int i = 1; i <= currentClusterCount; i++) {
                 Map<Double, Integer> tempComponents = new HashMap<>();
-                double currentSumLogProbability = getProbabilityForSingleCluster(variable, i, tempComponents);
+                double currentSumLogProbability = getProbabilityForSingleCluster(variable, i, tempComponents, false);
                 if (currentSumLogProbability > sumLogProbability) {
                     sumLogProbability = currentSumLogProbability;
                     selectedCluster = i;
                     selectedComponents = tempComponents;
                 }
             }
+
+
             if (selectedCluster != -1) {
+                if(sumLogProbability < COMPONENT_PROBABILITY_THRESHOLD && currentComponentCount.get(selectedCluster) < MAX_COMPONENTS) {
+                    Map<Double, Integer> tempComponents = new HashMap<>();
+                    sumLogProbability = getProbabilityForSingleCluster(variable, selectedCluster, tempComponents, true);
+                }
+
+
                 sumLogLikelihood += sumLogProbability;
                 variableClusters.put(variable.getKey(), selectedCluster);
                 clusterVariableCount[selectedCluster - 1]++;
@@ -304,20 +315,23 @@ public class PerClusterMOG implements BaseExpectationMaximization {
 //                System.out.println("Error");
 //            }
         }
-        if (currentIteration == MAX_ITERATION || Math.abs(previosSumLogLikelihood - sumLogLikelihood) <= 500 || sumLogLikelihood >= -5000) {
+        sumLogLikelihood /= variableValues.size();
+        if (currentIteration == MAX_ITERATION || Math.abs(previosSumLogLikelihood - sumLogLikelihood) <= LOG_LIKELIHOOD_DIFF || sumLogLikelihood >= LOG_LIKELIHOOD_THRESHOLD) {
             isConverged = true;
         }
         previosSumLogLikelihood = sumLogLikelihood;
         System.out.println("Log-Likelihood : " + sumLogLikelihood);
     }
 
-    private double getProbabilityForSingleCluster(Map.Entry<String, List<Double>> variable, int i, Map<Double, Integer> tempComponents) {
+    private double getProbabilityForSingleCluster(Map.Entry<String, List<Double>> variable, int i, Map<Double, Integer> tempComponents, boolean addComponents) {
         Integer componentCount = currentComponentCount.get(i);
         double currentSumLogProbability = 0;
+        int uniqueVariableValues = 0;
         for (Double variableValue : variable.getValue()) {
             if (tempComponents.containsKey(variableValue)) {
                 continue;
             }
+            uniqueVariableValues++;
             int component = -1;
             double valueProbability = Double.NEGATIVE_INFINITY;
 
@@ -337,17 +351,18 @@ public class PerClusterMOG implements BaseExpectationMaximization {
                 }
             }
 
-            if(valueProbability >= COMPONENT_PROBABILITY_THRESHOLD) {
-                tempComponents.put(variableValue, component);
-                currentSumLogProbability += valueProbability;
-            } else {
+            if(addComponents && valueProbability < COMPONENT_PROBABILITY_THRESHOLD && componentCount < MAX_COMPONENTS) {
+//                System.out.println("VALUE PROBABILITY :  " + valueProbability + " AND COMPONENT COUNT :  " + (componentCount+1));
                 componentCount++;
                 currentComponentCount.put(i, componentCount);
                 currentGaussianParameters.put(i + "_" + componentCount, new double[]{variableValue, 1});
+            } else {
+                tempComponents.put(variableValue, component);
+                currentSumLogProbability += valueProbability;
             }
 
         }
-        return currentSumLogProbability;
+        return currentSumLogProbability/uniqueVariableValues;
     }
 
     public void executeMStep() throws IOException {

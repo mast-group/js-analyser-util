@@ -269,35 +269,8 @@ public class PerClusterMOG implements BaseExpectationMaximization {
             int selectedCluster = -1;
             Map<Double, Integer> selectedComponents = new HashMap<>();
             for (int i = 1; i <= currentClusterCount; i++) {
-                Integer componentCount = currentComponentCount.get(i);
-                double currentSumLogProbability = 0;
                 Map<Double, Integer> tempComponents = new HashMap<>();
-                for (Double variableValue : variable.getValue()) {
-                    if (tempComponents.containsKey(variableValue)) {
-                        continue;
-                    }
-                    int component = -1;
-                    double valueProbability = Double.NEGATIVE_INFINITY;
-
-                    for (int j = 1; j <= componentCount; j++) {
-                        double[] componentParameters = currentGaussianParameters.get(i + "_" + j);
-                        NormalDistribution normalDistribution = new NormalDistribution(componentParameters[0], componentParameters[1]);
-                        if (new Double(normalDistribution.logDensity(variableValue)).isInfinite()) continue;
-                        double logProbability = normalDistribution.logDensity(variableValue);
-//                                + currentClusterComponentPriors.get(String.valueOf(i))
-//                                + currentClusterComponentPriors.get(i + "_" + j);
-//                        if (logProbability == Double.NEGATIVE_INFINITY) {
-//                            System.out.println("ERROR");
-//                        }
-                        if (logProbability > valueProbability) {
-                            valueProbability = logProbability;
-                            component = j;
-                        }
-                    }
-
-                    tempComponents.put(variableValue, component);
-                    currentSumLogProbability += valueProbability;
-                }
+                double currentSumLogProbability = getProbabilityForSingleCluster(variable, i, tempComponents);
                 if (currentSumLogProbability > sumLogProbability) {
                     sumLogProbability = currentSumLogProbability;
                     selectedCluster = i;
@@ -331,6 +304,38 @@ public class PerClusterMOG implements BaseExpectationMaximization {
         }
         previosSumLogLikelihood = sumLogLikelihood;
         System.out.println("Log-Likelihood : " + sumLogLikelihood);
+    }
+
+    private double getProbabilityForSingleCluster(Map.Entry<String, List<Double>> variable, int i, Map<Double, Integer> tempComponents) {
+        Integer componentCount = currentComponentCount.get(i);
+        double currentSumLogProbability = 0;
+        for (Double variableValue : variable.getValue()) {
+            if (tempComponents.containsKey(variableValue)) {
+                continue;
+            }
+            int component = -1;
+            double valueProbability = Double.NEGATIVE_INFINITY;
+
+            for (int j = 1; j <= componentCount; j++) {
+                double[] componentParameters = currentGaussianParameters.get(i + "_" + j);
+                NormalDistribution normalDistribution = new NormalDistribution(componentParameters[0], componentParameters[1]);
+                if (new Double(normalDistribution.logDensity(variableValue)).isInfinite()) continue;
+                double logProbability = normalDistribution.logDensity(variableValue)
+                                + currentClusterComponentPriors.get(String.valueOf(i))
+                                + currentClusterComponentPriors.get(i + "_" + j);
+//                        if (logProbability == Double.NEGATIVE_INFINITY) {
+//                            System.out.println("ERROR");
+//                        }
+                if (logProbability > valueProbability) {
+                    valueProbability = logProbability;
+                    component = j;
+                }
+            }
+
+            tempComponents.put(variableValue, component);
+            currentSumLogProbability += valueProbability;
+        }
+        return currentSumLogProbability;
     }
 
     public void executeMStep() throws IOException {

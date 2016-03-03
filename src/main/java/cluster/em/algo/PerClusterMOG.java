@@ -15,16 +15,18 @@ import java.util.*;
  * Created by Pankajan on 25/02/2016.
  */
 public class PerClusterMOG implements BaseExpectationMaximization {
+    private static final boolean HOME = true;
     private static final String VARIABLE_FILE_NAME = "50_occurances.csv";
+
     private static final int CLUSTER_COUNT = 12;
     private static final int COMPONENT_COUNT = 3;
     private static final int MAX_ITERATION = 1000;
     public static final int SAMPLE_SIZE = 1000;
-    private static final boolean HOME = true;
+    private static final int MAX_COMPONENTS = 20;
+
     private static final double COMPONENT_PROBABILITY_THRESHOLD = -10;
     public static final double LOG_LIKELIHOOD_DIFF = 0.001;
     public static final int LOG_LIKELIHOOD_THRESHOLD = -5;
-    private static final int MAX_COMPONENTS = 20;
 
     private MinMaxPriorityQueue<Double> minimumValues = MinMaxPriorityQueue.expectedSize(10000).maximumSize(10000).create();
     private MinMaxPriorityQueue<Double> maximumValues = MinMaxPriorityQueue.orderedBy(Ordering.natural().reverse()).expectedSize(10000).maximumSize(10000).create();
@@ -37,8 +39,6 @@ public class PerClusterMOG implements BaseExpectationMaximization {
     //Map with variable names as key and their respective clusters as values. Ex: background_tokenizer.js->2481-3510_currentLine -> 1
     private Map<String, Integer> variableClusters = new HashMap<>();
     private Map<String, String> variableComponents = new HashMap<>();
-    //Map with variable names as key and their respective components in given cluster as values. Ex: background_tokenizer.js->2481-3510_currentLine -> 2 (So, considering value from variableClusters, this variable is in component 2 in cluster 1)
-    private Map<String, Integer> variableValueComponents = new HashMap<>();
     //Map with variable cluster_component as key and all the variable values that are assigned to that component as value. Ex: 1_2-> {12, 23, 34, 12.01}
     private Map<String, List<Double>> clusterComponentVariableValues = new HashMap<>();
 
@@ -113,7 +113,7 @@ public class PerClusterMOG implements BaseExpectationMaximization {
                 System.out.print("           Component " + i);
                 System.out.println(" -> Mean : " + params[0] + " , SD : " + params[1]);
             }
-            for (Map.Entry<String, Integer> variableCluster : variableClusters.entrySet()) {
+           /* for (Map.Entry<String, Integer> variableCluster : variableClusters.entrySet()) {
                 if (variableCluster.getValue() == k) {
                     String[] components = variableComponents.get(variableCluster.getKey()).split(",");
                     int[] componentCount = new int[currentComponentCount.get(variableCluster.getValue())];
@@ -128,7 +128,7 @@ public class PerClusterMOG implements BaseExpectationMaximization {
 
                     System.out.println(variableProjectMap.get(variableCluster.getKey()) + " -> " + variableCluster.getKey() + " : " + builder);
                 }
-            }
+            }*/
         }
 //        writer.flush();
 //        writer.close();
@@ -299,7 +299,6 @@ public class PerClusterMOG implements BaseExpectationMaximization {
                 clusterVariableCount[selectedCluster - 1]++;
                 for (Map.Entry<Double, Integer> entry : selectedComponents.entrySet()) {
                     if (entry.getValue() != -1) {
-                        variableValueComponents.put(variable.getKey() + "_" + entry.getKey(), entry.getValue());
                         String cluster_component = selectedCluster + "_" + entry.getValue();
                         if (!clusterComponentVariableValues.containsKey(cluster_component))
                             clusterComponentVariableValues.put(cluster_component, new ArrayList<>());
@@ -378,6 +377,7 @@ public class PerClusterMOG implements BaseExpectationMaximization {
                 if (values != null) clusterVariableValuesTotal += values.size();
             }
 
+            List<Integer> emptyComponents = new ArrayList<>();
             for (int j = 1; j <= clusterComponentCount; j++) {
                 List<Double> values = clusterComponentVariableValues.get(i + "_" + j);
                 if (values != null && values.size() > 1) {
@@ -395,19 +395,64 @@ public class PerClusterMOG implements BaseExpectationMaximization {
                         currentGaussianParameters.put(i + "_" + j, new double[]{descriptiveStatistics.getMean(), descriptiveStatistics.getStandardDeviation()});
                     }
                     currentClusterComponentPriors.put(i + "_" + j, Math.log((values.size() + 1) / clusterVariableValuesTotal));
-                } else if( values == null) {
-                    DescriptiveStatistics descriptiveStatistics;
-                    do {
-                        double[] randomSamples = getRandomSamples();
-                        descriptiveStatistics = new DescriptiveStatistics(randomSamples);
-                        currentGaussianParameters.put(i + "_" + j, new double[]{descriptiveStatistics.getMean(), descriptiveStatistics.getStandardDeviation()});
-                        currentClusterComponentPriors.put(i + "_" + j, Math.log(1 / clusterVariableValuesTotal));
-                    } while(Double.isNaN(descriptiveStatistics.getMean()) || Double.isNaN(descriptiveStatistics.getStandardDeviation()));
+                } else if (values == null) {
+                    emptyComponents.add(j);
                 } else {
-                    currentGaussianParameters.put(i + "_" + j, new double[]{values.get(0), 0});
+                    currentGaussianParameters.put(i + "_" + j, new double[]{values.get(0), 1});
                     currentClusterComponentPriors.put(i + "_" + j, Math.log(2 / clusterVariableValuesTotal));
                 }
             }
+
+            //Remove empty components
+            if (emptyComponents.size() == clusterComponentCount) {
+                for (int j = 2; j <= clusterComponentCount; j++) {
+                    currentGaussianParameters.remove(i + "_" + j);
+                    currentClusterComponentPriors.remove(i + "_" + j);
+                    clusterComponentVariableValues.remove(i + "_" + j);
+                    currentComponentCount.put(i, (currentComponentCount.get(i) - 1));
+                }
+            } else {
+            int currentSwitchingComponent = clusterComponentCount;
+            for (int j = 1; j <= clusterComponentCount; j++) {
+                if (emptyComponents.contains(j)) {
+                    while (emptyComponents.contains(currentSwitchingComponent) && currentSwitchingComponent > 0)
+                        currentSwitchingComponent--;
+
+                    if (currentSwitchingComponent > j) {
+                        //Switch
+                        currentGaussianParameters.put(i + "_" + j, currentGaussianParameters.get(i + "_" + currentSwitchingComponent));
+                        currentClusterComponentPriors.put(i + "_" + j, currentClusterComponentPriors.get(i + "_" + currentSwitchingComponent));
+                        clusterComponentVariableValues.put(i + "_" + j, clusterComponentVariableValues.get(i + "_" + currentSwitchingComponent));
+                        currentComponentCount.put(i, (currentComponentCount.get(i) - 1));
+                        currentGaussianParameters.remove(i + "_" + currentSwitchingComponent);
+                        currentClusterComponentPriors.remove(i + "_" + currentSwitchingComponent);
+                        clusterComponentVariableValues.remove(i + "_" + currentSwitchingComponent);
+
+                        for (Map.Entry<String, Integer> variableCluster : variableClusters.entrySet()) {
+                            if (variableCluster.getValue() == i) {
+                                StringBuilder builder = new StringBuilder();
+                                String[] components = variableComponents.get(variableCluster.getKey()).split(",");
+                                for (String component : components) {
+                                    if (Integer.parseInt(component) == currentSwitchingComponent)
+                                        builder.append("," + j);
+                                    else builder.append(",").append(component);
+                                }
+                                variableComponents.put(variableCluster.getKey(), builder.substring(1));
+                            }
+                        }
+                        currentSwitchingComponent--;
+                    } else {
+                        if (currentComponentCount.get(i) != 1) {
+                            //Remove
+                            currentGaussianParameters.remove(i + "_" + j);
+                            currentClusterComponentPriors.remove(i + "_" + j);
+                            clusterComponentVariableValues.remove(i + "_" + j);
+                            currentComponentCount.put(i, (currentComponentCount.get(i) - 1));
+                        }
+                    }
+                }
+            }
+        }
         }
 
 

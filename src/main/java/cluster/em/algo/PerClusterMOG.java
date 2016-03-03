@@ -361,7 +361,9 @@ public class PerClusterMOG implements BaseExpectationMaximization {
 
             for (int j = 1; j <= componentCount; j++) {
                 double[] componentParameters = currentGaussianParameters.get(i + "_" + j);
-                NormalDistribution normalDistribution = new NormalDistribution(componentParameters[0], componentParameters[1]);
+                double sd = componentParameters[1];
+                if(sd==0)sd =1;
+                NormalDistribution normalDistribution = new NormalDistribution(componentParameters[0], sd);
                 if (new Double(normalDistribution.logDensity(variableValue)).isInfinite()) continue;
                 double logProbability = normalDistribution.logDensity(variableValue);
 //                                + currentClusterComponentPriors.get(String.valueOf(i))

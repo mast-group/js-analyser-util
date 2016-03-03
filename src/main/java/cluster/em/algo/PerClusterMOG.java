@@ -410,13 +410,15 @@ public class PerClusterMOG implements BaseExpectationMaximization {
                 if (values != null && values.size() > 1) {
                     double[] valuesInPrimitive = ArrayUtils.toPrimitive(values.toArray(new Double[values.size()]));
                     DescriptiveStatistics descriptiveStatistics = new DescriptiveStatistics(valuesInPrimitive);
-/*
+/
+                    double sd = descriptiveStatistics.getStandardDeviation();
                     if (Double.isNaN(descriptiveStatistics.getStandardDeviation()) || descriptiveStatistics.getStandardDeviation() <= 0) {
-                            double[] randomSamples = getRandomSamples();
+                        sd = 1;
+                           /* double[] randomSamples = getRandomSamples();
                             descriptiveStatistics = new DescriptiveStatistics(randomSamples);
                             currentGaussianParameters.put(i + "_" + j, new double[]{descriptiveStatistics.getMean(), descriptiveStatistics.getStandardDeviation()});
-                    }*/
-                    currentGaussianParameters.put(i + "_" + j, new double[]{descriptiveStatistics.getMean(), descriptiveStatistics.getStandardDeviation()});
+*/                    }
+                    currentGaussianParameters.put(i + "_" + j, new double[]{descriptiveStatistics.getMean(), sd});
 
                     currentClusterComponentPriors.put(i + "_" + j, Math.log((values.size() + 1) / clusterVariableValuesTotal));
                 } else if (values == null) {

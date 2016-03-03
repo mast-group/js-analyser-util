@@ -93,6 +93,7 @@ public class PerClusterMOG implements BaseExpectationMaximization {
             @Override
             public void run() {
                 isConverged = true;
+                System.out.println("Killed");
             }
         });
     }

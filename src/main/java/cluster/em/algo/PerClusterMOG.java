@@ -145,29 +145,35 @@ public class PerClusterMOG implements BaseExpectationMaximization {
         for (int i = 1; i <= clusterCount; i++) {
             currentComponentCount.put(i, componentCount);
             currentClusterComponentPriors.put(String.valueOf(i), Math.log(clusterPrior));
+            double[] randomSamples = getRandomSamples();
+            int range = randomSamples.length/componentCount;
+            int start = 0;
             for (int j = 1; j <= componentCount; j++) {
                 DescriptiveStatistics descriptiveStatistics;
                 do {
-                    double[] randomSamples = getRandomSamples();
-                    descriptiveStatistics = new DescriptiveStatistics(randomSamples);
+                    descriptiveStatistics = new DescriptiveStatistics(Arrays.copyOfRange(randomSamples, start, start + range));
                     currentGaussianParameters.put(i + "_" + j, new double[]{descriptiveStatistics.getMean(), descriptiveStatistics.getStandardDeviation()});
                     currentClusterComponentPriors.put(i + "_" + j, Math.log(componentPrior));
                 } while (Double.isNaN(descriptiveStatistics.getMean()) || Double.isNaN(descriptiveStatistics.getStandardDeviation()));
+                start += range;
             }
         }
     }
 
     private double[] getRandomSamples() {
         double[] randomSamples;
-        Random random = new Random();
+       /* Random random = new Random();
         int nextInt = random.nextInt(5);
         if (nextInt == 1) {
             randomSamples = getRandomSamples(minValuesArray, SAMPLE_SIZE);
         } else if (nextInt == 2) {
             randomSamples = getRandomSamples(maxValuesArray, SAMPLE_SIZE);
         } else {
-            randomSamples = getRandomSamples(SAMPLE_SIZE);
-        }
+            randomSamples = getRandomSamples(SAMPLE_SIZE, true);
+        }*/
+
+        randomSamples = getRandomSamples(45, false);
+
         return randomSamples;
     }
 
@@ -194,13 +200,27 @@ public class PerClusterMOG implements BaseExpectationMaximization {
         return values;
     }
 
-    private double[] getRandomSamples(int noOfSamples) {
+    private double[] getRandomSamples(int noOfSamples, boolean randomValuesFromDifferentVariables) {
         double[] randomSampleValues = new double[noOfSamples];
-        for (int i = 0; i < noOfSamples; i++) {
+        if(randomValuesFromDifferentVariables) {
+            for (int i = 0; i < noOfSamples; i++) {
+                int variableCountBound = variableNameList.size();
+                Random ran = new Random();
+                List<Double> variableValues = this.variableValues.get(variableNameList.get(ran.nextInt(variableCountBound)));
+                randomSampleValues[i] = variableValues.get(ran.nextInt(variableValues.size()));
+            }
+        } else {
             int variableCountBound = variableNameList.size();
             Random ran = new Random();
-            List<Double> variableValues = this.variableValues.get(variableNameList.get(ran.nextInt(variableCountBound)));
-            randomSampleValues[i] = variableValues.get(ran.nextInt(variableValues.size()));
+            List<Double> variableValues;
+            int size;
+            do {
+                variableValues = this.variableValues.get(variableNameList.get(ran.nextInt(variableCountBound)));
+                size = variableValues.size();
+            } while (variableValues.size() >= noOfSamples);
+            for (int i = 0; i < noOfSamples; i++) {
+                randomSampleValues[i] = variableValues.get(ran.nextInt(size));
+            }
         }
         return randomSampleValues;
     }
@@ -386,17 +406,14 @@ public class PerClusterMOG implements BaseExpectationMaximization {
                 if (values != null && values.size() > 1) {
                     double[] valuesInPrimitive = ArrayUtils.toPrimitive(values.toArray(new Double[values.size()]));
                     DescriptiveStatistics descriptiveStatistics = new DescriptiveStatistics(valuesInPrimitive);
-
-                    if (Double.isNaN(descriptiveStatistics.getMean()) || Double.isNaN(descriptiveStatistics.getStandardDeviation()) || descriptiveStatistics.getStandardDeviation() <= 0) {
-                        do {
+/*
+                    if (Double.isNaN(descriptiveStatistics.getStandardDeviation()) || descriptiveStatistics.getStandardDeviation() <= 0) {
                             double[] randomSamples = getRandomSamples();
                             descriptiveStatistics = new DescriptiveStatistics(randomSamples);
                             currentGaussianParameters.put(i + "_" + j, new double[]{descriptiveStatistics.getMean(), descriptiveStatistics.getStandardDeviation()});
-                        }
-                        while (Double.isNaN(descriptiveStatistics.getMean()) || Double.isNaN(descriptiveStatistics.getStandardDeviation()));
-                    } else {
-                        currentGaussianParameters.put(i + "_" + j, new double[]{descriptiveStatistics.getMean(), descriptiveStatistics.getStandardDeviation()});
-                    }
+                    }*/
+                    currentGaussianParameters.put(i + "_" + j, new double[]{descriptiveStatistics.getMean(), descriptiveStatistics.getStandardDeviation()});
+
                     currentClusterComponentPriors.put(i + "_" + j, Math.log((values.size() + 1) / clusterVariableValuesTotal));
                 } else if (values == null) {
                     emptyComponents.add(j);

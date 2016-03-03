@@ -21,6 +21,7 @@ public class PerClusterMOG implements BaseExpectationMaximization {
     private static final int MAX_ITERATION = 1000;
     public static final int SAMPLE_SIZE = 1000;
     private static final boolean HOME = false;
+    private static final double COMPONENT_PROBABILITY_THRESHOLD = -1.301;
 
     private MinMaxPriorityQueue<Double> minimumValues = MinMaxPriorityQueue.expectedSize(10000).maximumSize(10000).create();
     private MinMaxPriorityQueue<Double> maximumValues = MinMaxPriorityQueue.orderedBy(Ordering.natural().reverse()).expectedSize(10000).maximumSize(10000).create();
@@ -29,6 +30,7 @@ public class PerClusterMOG implements BaseExpectationMaximization {
 
     //Map with variable names as key and their values as value. Ex: background_tokenizer.js->2481-3510_currentLine -> {10.11, 11, 100, 12.99}
     private Map<String, List<Double>> variableValues;
+    private HashMap<String, String> variableProjectMap;
     //Map with variable names as key and their respective clusters as values. Ex: background_tokenizer.js->2481-3510_currentLine -> 1
     private Map<String, Integer> variableClusters = new HashMap<>();
     private Map<String, String> variableComponents = new HashMap<>();
@@ -56,12 +58,14 @@ public class PerClusterMOG implements BaseExpectationMaximization {
     private double previosSumLogLikelihood = 0;
     private boolean isConverged = false;
 
-//    private BufferedWriter writer;
+    //    private BufferedWriter writer;
     public void execute() throws IOException {
         /**
          * Read variable names from the input file and save them in a Map with project as keys and variable name list as value
          */
         try {
+            variableNameList = new ArrayList<>();
+            variableProjectMap = new HashMap<>();
             if(HOME) {
                 List<String> variableNames = readVariableNameFile();
                 variableValues = loadVariableValues(variableNames);
@@ -119,7 +123,7 @@ public class PerClusterMOG implements BaseExpectationMaximization {
                         builder.append((i1 + 1)).append(" x ").append(i).append(" | ");
                     }
 
-                    System.out.println(variableCluster.getKey() + " : " + builder);
+                    System.out.println(variableProjectMap.get(variableCluster.getKey()) + " -> " + variableCluster.getKey() + " : " + builder);
                 }
             }
         }
@@ -198,7 +202,6 @@ public class PerClusterMOG implements BaseExpectationMaximization {
     }
 
     private Map<String, List<Double>> loadVariableValues(File root) throws IOException {
-        variableNameList = new ArrayList<>();
         Map<String, List<Double>> variableValueMap = new HashMap<>();
         System.out.println("Loading ROOT Folder "+ root.getAbsolutePath());
         for (File folder : root.listFiles()) {
@@ -214,7 +217,6 @@ public class PerClusterMOG implements BaseExpectationMaximization {
     }
 
     private Map<String, List<Double>> loadVariableValues(List<String> variableNames) throws IOException {
-        variableNameList = new ArrayList<>();
         Map<String, List<Double>> variableValueMap = new HashMap<>();
         for (String variableName : variableNames) {
             readFile(variableValueMap, Constants.RESULT_ROOT + Constants.EACH_VARIABLE_FOLDER + variableName + ".csv");
@@ -238,8 +240,11 @@ public class PerClusterMOG implements BaseExpectationMaximization {
         }
 
         String[] split = fileName.split("/");
-        variableValueMap.put(split[split.length-1], variableValues);
-        variableNameList.add(split[split.length-1]);
+        String variableName = split[split.length - 1].split(".csv")[0];
+        String projectName = split[split.length - 2];
+        variableValueMap.put(variableName, variableValues);
+        variableNameList.add(variableName);
+        variableProjectMap.put(variableName, projectName);
     }
 
     private List<String> readVariableNameFile() throws IOException {
@@ -320,9 +325,9 @@ public class PerClusterMOG implements BaseExpectationMaximization {
                 double[] componentParameters = currentGaussianParameters.get(i + "_" + j);
                 NormalDistribution normalDistribution = new NormalDistribution(componentParameters[0], componentParameters[1]);
                 if (new Double(normalDistribution.logDensity(variableValue)).isInfinite()) continue;
-                double logProbability = normalDistribution.logDensity(variableValue)
-                                + currentClusterComponentPriors.get(String.valueOf(i))
-                                + currentClusterComponentPriors.get(i + "_" + j);
+                double logProbability = normalDistribution.logDensity(variableValue);
+//                                + currentClusterComponentPriors.get(String.valueOf(i))
+//                                + currentClusterComponentPriors.get(i + "_" + j);
 //                        if (logProbability == Double.NEGATIVE_INFINITY) {
 //                            System.out.println("ERROR");
 //                        }
@@ -332,8 +337,15 @@ public class PerClusterMOG implements BaseExpectationMaximization {
                 }
             }
 
-            tempComponents.put(variableValue, component);
-            currentSumLogProbability += valueProbability;
+            if(valueProbability >= COMPONENT_PROBABILITY_THRESHOLD) {
+                tempComponents.put(variableValue, component);
+                currentSumLogProbability += valueProbability;
+            } else {
+                componentCount++;
+                currentComponentCount.put(i, componentCount);
+                currentGaussianParameters.put(i + "_" + componentCount, new double[]{variableValue, 0});
+            }
+
         }
         return currentSumLogProbability;
     }
@@ -368,7 +380,7 @@ public class PerClusterMOG implements BaseExpectationMaximization {
                         currentGaussianParameters.put(i + "_" + j, new double[]{descriptiveStatistics.getMean(), descriptiveStatistics.getStandardDeviation()});
                     }
                     currentClusterComponentPriors.put(i + "_" + j, Math.log((values.size() + 1) / clusterVariableValuesTotal));
-                } else {
+                } else if( values == null) {
                     DescriptiveStatistics descriptiveStatistics;
                     do {
                         double[] randomSamples = getRandomSamples();
@@ -376,6 +388,9 @@ public class PerClusterMOG implements BaseExpectationMaximization {
                         currentGaussianParameters.put(i + "_" + j, new double[]{descriptiveStatistics.getMean(), descriptiveStatistics.getStandardDeviation()});
                         currentClusterComponentPriors.put(i + "_" + j, Math.log(1 / clusterVariableValuesTotal));
                     } while(Double.isNaN(descriptiveStatistics.getMean()) || Double.isNaN(descriptiveStatistics.getStandardDeviation()));
+                } else {
+                    currentGaussianParameters.put(i + "_" + j, new double[]{values.get(0), 0});
+                    currentClusterComponentPriors.put(i + "_" + j, Math.log(2 / clusterVariableValuesTotal));
                 }
             }
         }

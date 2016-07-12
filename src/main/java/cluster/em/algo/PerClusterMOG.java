@@ -73,9 +73,10 @@ public class PerClusterMOG implements BaseExpectationMaximization {
             if(HOME) {
                 List<String> variableNames = readVariableNameFile();
                 variableValues = loadVariableValues(variableNames);
-//                writer = new BufferedWriter(new FileWriter(Constants.RESULT_ROOT+"result.txt"));
+//                writer = new BufferedWriter(new FileWriter(Constants.RESULT_ROOT+"result.t
+// xt"));
             } else {
-                variableValues = loadVariableValues(new File(Constants.RESULT_OFFICE_ROOT + Constants.FILTERED_VARIABLE_LIST_FOLDER + Constants.EACH_VARIABLE_FOLDER));
+                variableValues = loadVariableValues(new File(Constants.RESULT_ROOT + Constants.EACH_VARIABLE_FOLDER));
 //                writer = new BufferedWriter(new FileWriter(Constants.RESULT_OFFICE_ROOT+"result.txt"));
             }
             initializeShutdownHook();
@@ -253,7 +254,7 @@ public class PerClusterMOG implements BaseExpectationMaximization {
         Map<String, List<Double>> variableValueMap = new HashMap<>();
         System.out.println("Loading ROOT Folder "+ root.getAbsolutePath());
         for (File folder : root.listFiles()) {
-            if(folder.getName().startsWith(".")) continue;
+            if(folder.getName().startsWith(".") || !folder.isDirectory() || !folder.getName().equals("mathjs_orig")) continue;
             System.out.println("Loading folder " + folder.getAbsolutePath());
             for (File file : folder.listFiles()) {
                 if(file.getName().startsWith(".")) continue;

@@ -18,14 +18,15 @@ public class VariablesAndValues {
             variablesAndValues.analyze(fileName+ ".txt");
         }*/
 
+        List<String> selectedProjects = new ArrayList<String> (Arrays.asList(new String [] {"log_mathjs.txt"}));
+        boolean ONLY_SELECTED_PROJECTS = true;
         File folder = new File(Constants.RESULT_ROOT + Constants.RAW_FOLDER);
         for (File file : folder.listFiles()) {
-            if(!file.isDirectory()) {
+            if(!file.isDirectory() && selectedProjects.contains(file.getName()) && ONLY_SELECTED_PROJECTS){
                 VariablesAndValues variablesAndValues = new VariablesAndValues();
                 variablesAndValues.analyze(file.getAbsolutePath());
             }
         }
-
     }
 
     private void analyze(String fileName) throws IOException {
@@ -42,7 +43,7 @@ public class VariablesAndValues {
             {
                 String str = s.next();
                 String currentString = str;
-                int lastIndex = str.lastIndexOf(">>>");
+                int lastIndex = str.lastIndexOf(">>");
                 if(lastIndex== -1 || lastIndex ==0) {
                     nextString.append(" ").append(currentString);
                 } else {
@@ -74,7 +75,7 @@ public class VariablesAndValues {
     }
 
     private void analyzeResultString(Map<String, Map<String, List<String>>> result, Map<String, Integer> methodCountResult, String fileAsString) {
-        String[] lines = fileAsString.split(">>>");
+        String[] lines = fileAsString.split(">>");
         for (String line : lines) {
             if (line.contains("...")) {
                 String[] singleMethodExecutions = line.split("\\.\\.\\.");
@@ -87,8 +88,11 @@ public class VariablesAndValues {
 
                     for(int i=1; i<singleMethodExecutions.length ; i++) {
                         String singleExecution = singleMethodExecutions[i];
-                        String [] splitValues = singleExecution.split("-_-_-_-Changed Variable \\[");
+                        String [] splitValues = singleExecution.split("-_\\{");
 
+                        if(splitValues.length!=2) {
+                            System.out.println(singleExecution);
+                        }
                         Map<String , List<String>> singleMethodResults;
                         if(result.containsKey(splitValues[0])) {
                             singleMethodResults = result.get(splitValues[0]);
@@ -98,10 +102,10 @@ public class VariablesAndValues {
 
 
                         String variableName = splitValues[1];
-                        variableName = variableName.substring(0, variableName.indexOf("]"));
+                        variableName = variableName.substring(0, variableName.indexOf("}"));
 
-                        String variableValue = singleExecution.split(" value \\[")[1];
-                        variableValue = variableValue.substring(0, variableValue.indexOf("]"));
+                        String variableValue = singleExecution.split("->\\{")[1];
+                        variableValue = variableValue.substring(0, variableValue.indexOf("}"));
 
                         if(singleMethodResults.containsKey(variableName)) {
                             singleMethodResults.get(variableName).add(variableValue);
@@ -155,7 +159,11 @@ public class VariablesAndValues {
 
                 Integer methodCount = methodCountResult.get(stringMapEntry.getKey());
                 if(methodCount==null) {
-                    String[] methodDetails = stringMapEntry.getKey().split("->");
+                    methodCount=0;
+/*                    String[] methodDetails = stringMapEntry.getKey().split("->");
+                    if(methodDetails.length!=2) {
+                        System.out.println();
+                    }
                     int start = Integer.parseInt(methodDetails[1].split(",")[0]);
                     int end = Integer.parseInt(methodDetails[1].split(",")[1]);
 
@@ -183,7 +191,7 @@ public class VariablesAndValues {
                         if (methodDetails[0].equals(methodEntryDetails[0])) {
                             System.out.println(methodDetails[0]+"->"+methodDetails[1]+"->"+methodEntryDetails[1]);
                         }
-                    }
+                    }*/
                 }
                 writer.println(stringMapEntry.getKey().replace(",", "-") + "," + methodCount + "," + entry.getKey() + "," + valueMap.size() + "," + total + builder.toString());
             }

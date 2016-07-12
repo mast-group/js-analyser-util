@@ -23,4 +23,6 @@ public class Constants {
     public static final String RAW_FOLDER = "raw/";
     public static final String FILTERED_VARIABLE_LIST_FOLDER = "filtered_variable_list/";
     public static final String EACH_VARIABLE_FOLDER = "each_variable_file/";
+    public static final String EM_CLUSTER_FOLDER = "EM Cluster/";
+
 }

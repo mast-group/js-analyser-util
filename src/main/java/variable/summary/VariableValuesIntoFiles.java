@@ -24,15 +24,15 @@ public class VariableValuesIntoFiles {
      * @param path
      * @throws IOException
      */
-    public void saveEachVariableValuesInFiles(String path)  throws IOException {
+    public void saveEachVariableValuesInFiles(String path, int thresholdUniqueValues, int thresholdTotalValues)  throws IOException {
         File file = new File(path);
 
         if(file.isDirectory()) {
             for (File resultSummary : file.listFiles()) {
-                saveOneProjectVariablesIntoFiles(path, resultSummary);
+                saveOneProjectVariablesIntoFiles(path, resultSummary, thresholdUniqueValues, thresholdTotalValues);
             }
         } else {
-            saveOneProjectVariablesIntoFiles(path, file);
+            saveOneProjectVariablesIntoFiles(path, file, thresholdUniqueValues, thresholdTotalValues);
         }
     }
 
@@ -45,8 +45,8 @@ public class VariableValuesIntoFiles {
      * @param resultSummary
      * @throws IOException
      */
-    private void saveOneProjectVariablesIntoFiles(String path, File resultSummary) throws IOException {
-        if (resultSummary.getName().contains("_summary_")) {
+    private void saveOneProjectVariablesIntoFiles(String path, File resultSummary, int thresholdUniqueValues, int thresholdTotalValues) throws IOException {
+        if (resultSummary.getName().contains("_summary_") && !resultSummary.getName().startsWith(".")) {
             BufferedReader reader = new BufferedReader(new FileReader(resultSummary));
 
             File resultFolder = new File(path.split("/summary/")[0] + "/each_variable_file/" + resultSummary.getName().substring(4, resultSummary.getName().indexOf(".txt_summary_")));
@@ -56,16 +56,26 @@ public class VariableValuesIntoFiles {
             reader.readLine();
             while ((line = reader.readLine()) != null) {
                 String[] lineContent = line.split(",");
-                PrintWriter writer = new PrintWriter(resultFolder.getAbsolutePath() + "/" + lineContent[0].substring(lineContent[0].lastIndexOf("/")) + "_" + lineContent[2] + ".csv", "UTF-8");
-
+                int uniqueValues = lineContent.length - 5;
+                int totalTimes = 0;
                 for (int i = 5; i < lineContent.length; i++) {
                     String[] values = lineContent[i].split(" x ");
-                    for (int j = 0; j < Integer.parseInt(values[1]); j++) {
-                        writer.println(values[0]);
-                    }
+                    totalTimes += Integer.parseInt(values[1]);
                 }
-                writer.flush();
-                writer.close();
+
+                if(uniqueValues >= thresholdUniqueValues && totalTimes >= thresholdTotalValues) {
+                    PrintWriter writer = new PrintWriter(resultFolder.getAbsolutePath() + "/" + lineContent[0] + "_" + lineContent[2] + ".csv", "UTF-8");
+
+
+                    for (int i = 5; i < lineContent.length; i++) {
+                        String[] values = lineContent[i].split(" x ");
+                        for (int j = 0; j < Integer.parseInt(values[1]); j++) {
+                            writer.println(values[0]);
+                        }
+                    }
+                    writer.flush();
+                    writer.close();
+                }
 
             }
 
@@ -83,7 +93,8 @@ public class VariableValuesIntoFiles {
         File file = new File(path);
         if(file.isDirectory()) {
             for (File resultSummary : file.listFiles()) {
-                if (resultSummary.getName().contains("_summary_")) {
+                if (resultSummary.getName().contains("_summary_") && !resultSummary.getName().startsWith(".")) {
+                    System.out.println("Processing file " + resultSummary.getAbsolutePath());
                     saveVariableValuesOfOneProjectInSingleFile(resultSummary, thresholdUniqueValues, thresholdTotalValues);
                 }
             }
@@ -101,7 +112,7 @@ public class VariableValuesIntoFiles {
 
         BufferedReader reader = new BufferedReader(new FileReader(file));
 
-        File resultFile = new File(file.getParent() + "/" + file.getName().substring(4, file.getName().indexOf(".txt_summary_")) + "_variable_summary.csv");
+        File resultFile = new File(new File(file.getParent()).getParent() + "/variable_value_pair/" + file.getName().substring(4, file.getName().indexOf(".txt_summary_")) + "_variable_summary.csv");
         Files.deleteIfExists(resultFile.toPath());
 
         PrintWriter writer = new PrintWriter(resultFile, "UTF-8");
@@ -125,14 +136,15 @@ public class VariableValuesIntoFiles {
         writer.close();
     }
 
-    static final String ROOT = "/Users/Pankajan/Edinburgh/Research_Source/Result/summary/log_pomelo.txt_summary_results.txt";
+    static final String ROOT = "/Users/Pankajan/Edinburgh/Research_Source/Result/summary/";
 
     public static void main(String[] args) throws IOException {
-        String fileName = "log_" + Constants.LESS + ".txt_summary_results.txt";
+//        String fileName = "log_" + Constants.LESS + ".txt_summary_results.txt";
+        String fileName = "log_mathjs_orig.txt_summary_results.csv";
 
         VariableValuesIntoFiles intoFiles = new VariableValuesIntoFiles();
-        intoFiles.saveEachVariableValuesInFiles(ROOT);
-//        intoFiles.saveVariableValuesInSingleFile(ROOT+fileName, 10, 100);
+        intoFiles.saveEachVariableValuesInFiles(ROOT+fileName, 1 , 50);
+//        intoFiles.saveVariableValuesInSingleFile(ROOT, 1, 50);
 
     }
 }

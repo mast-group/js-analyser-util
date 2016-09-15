@@ -15,9 +15,6 @@ import java.io.IOException;
  * Created by Pankajan on 07/04/2016.
  */
 public class ListRepositories {
-    private static final String GITHUB_ACCESS_TOKEN = "8d3023edc3f9fca1288417d4cd071d0df3803282";
-    private static final String BASE_URL = "https://api.github.com/search/repositories?";
-
     private static final int PAGE_COUNT = 100;
     private static final int PAGE_SIZE = 100;
     private static final String EXTRA_PARAMS = "q=+language:javascript&sort=stars&order=desc";
@@ -48,7 +45,7 @@ public class ListRepositories {
 
     public JsonElement getResultPerPage (int page) throws IOException {
         HttpClient httpClient = new HttpClient();
-        HttpMethod method = new GetMethod(BASE_URL + EXTRA_PARAMS + "&page=" + page + "&per_page=" + PAGE_SIZE );
+        HttpMethod method = new GetMethod(GithubConstants.BASE_SEARCH_URL + EXTRA_PARAMS + "&page=" + page + "&per_page=" + PAGE_SIZE );
         httpClient.executeMethod(method);
         JsonElement result = new JsonParser().parse(method.getResponseBodyAsString());
         method.releaseConnection();

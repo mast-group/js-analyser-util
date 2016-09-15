@@ -1,7 +1,5 @@
 package variable.summary;
 
-import common.utils.Constants;
-
 import java.io.*;
 import java.nio.file.Files;
 import java.util.*;
@@ -12,23 +10,23 @@ import java.util.*;
 public class VariablesAndValues {
 
     public static void main(String[] args) throws IOException {
-        /*for (String project : Constants.CURRENT_PROJECTS) {
-            String fileName = "/Users/Pankajan/Edinburgh/Research_Source/Result/raw/log_" + project;
-            variable.summary.VariablesAndValues variablesAndValues = new variable.summary.VariablesAndValues();
-            variablesAndValues.analyze(fileName+ ".txt");
-        }*/
-
-        List<String> selectedProjects = new ArrayList<String> (Arrays.asList(new String [] {"log_mathjs.txt"}));
-        boolean ONLY_SELECTED_PROJECTS = true;
-        File folder = new File(Constants.RESULT_ROOT + Constants.RAW_FOLDER);
-        for (File file : folder.listFiles()) {
-            if(!file.isDirectory() && selectedProjects.contains(file.getName()) && ONLY_SELECTED_PROJECTS){
+        if(args.length==0) {
+            System.out.println("Usage: <rawInstrumentLogfile> [OPTIONAL-summaryFilePath | DEFAULT- [rawInstrumentLogfile]summary.txt]");
+        } else {
+            File file = new File(args[0]);
+            if (!file.isDirectory()) {
                 VariablesAndValues variablesAndValues = new VariablesAndValues();
+                if(args.length==2) {
+                    variablesAndValues.outputFile = args[1];
+                } else {
+                    variablesAndValues.outputFile = args[0] + "summary.txt";
+                }
                 variablesAndValues.analyze(file.getAbsolutePath());
             }
         }
     }
 
+    private String outputFile;
     private void analyze(String fileName) throws IOException {
         Map<String, Map<String, List<String>>> result = new HashMap<String, Map<String, List<String>>>();
         Map<String, Integer> methodCountResult = new HashMap<>();
@@ -68,9 +66,7 @@ public class VariablesAndValues {
             }
         }
 
-//        analyzeResultString(result, fileAsString);
-
-        printResults(fileName, result, methodCountResult);
+        printResults(result, methodCountResult);
 
     }
 
@@ -128,18 +124,12 @@ public class VariablesAndValues {
     }
 
 
-    private void printResults(String fileName, Map<String, Map<String, List<String>>> result, Map<String, Integer> methodCountResult) throws IOException {
-        File file = new File(fileName + "_summary_results.txt");
-        Files.deleteIfExists(file.toPath());
-
-        PrintWriter writer = new PrintWriter(fileName.replace("/raw/", "/summary/") + "_summary_results.txt", "UTF-8");
+    private void printResults(Map<String, Map<String, List<String>>> result, Map<String, Integer> methodCountResult) throws IOException {
+        PrintWriter writer = new PrintWriter(outputFile, "UTF-8");
         writer.println("Method Location,No.of Calls of the Method,Variable Name,Unique Values,Total No.of Calls of the Variable,Values");
 
-        System.out.println("RESULT>>> ");
         for (Map.Entry<String, Map<String, List<String>>> stringMapEntry : result.entrySet()) {
-//            System.out.println("Method >>>>> " + stringMapEntry.getKey());
             for (Map.Entry<String, List<String>> entry : stringMapEntry.getValue().entrySet()) {
-//                System.out.println("  Variable >> " + entry.getKey() + " : " + StringUtils.join(entry.getValue(), ","));
 
                 Map<String, Integer> valueMap = new HashMap<>();
                 for (String value : entry.getValue()) {
@@ -160,38 +150,6 @@ public class VariablesAndValues {
                 Integer methodCount = methodCountResult.get(stringMapEntry.getKey());
                 if(methodCount==null) {
                     methodCount=0;
-/*                    String[] methodDetails = stringMapEntry.getKey().split("->");
-                    if(methodDetails.length!=2) {
-                        System.out.println();
-                    }
-                    int start = Integer.parseInt(methodDetails[1].split(",")[0]);
-                    int end = Integer.parseInt(methodDetails[1].split(",")[1]);
-
-                    int newStart = Integer.MIN_VALUE;
-                    int newEnd = Integer.MAX_VALUE;
-
-                    for (Map.Entry<String, Integer> methodEntry : methodCountResult.entrySet()) {
-                        String[] methodEntryDetails = methodEntry.getKey().split("->");
-                        if(methodDetails[0].equals(methodEntryDetails[0])) {
-                            int start_1 = Integer.parseInt(methodEntryDetails[1].split(",")[0]);
-                            int end_1 = Integer.parseInt(methodEntryDetails[1].split(",")[1]);
-
-                            if(start_1<=start && end_1 >= end && start_1 >= newStart && end_1 <= newEnd) {
-                                newStart = start_1;
-                                newEnd = end_1;
-                                methodCount = methodEntry.getValue();
-                            }
-                        }
-                    }
-
-                    if(newStart==Integer.MIN_VALUE)
-                        System.out.println("Error");
-                    for (Map.Entry<String, Integer> methodEntry : methodCountResult.entrySet()) {
-                        String[] methodEntryDetails = methodEntry.getKey().split("->");
-                        if (methodDetails[0].equals(methodEntryDetails[0])) {
-                            System.out.println(methodDetails[0]+"->"+methodDetails[1]+"->"+methodEntryDetails[1]);
-                        }
-                    }*/
                 }
                 writer.println(stringMapEntry.getKey().replace(",", "-") + "," + methodCount + "," + entry.getKey() + "," + valueMap.size() + "," + total + builder.toString());
             }

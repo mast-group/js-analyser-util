@@ -18,32 +18,11 @@ public class VariableQuartiles {
      * @param path
      * @throws IOException
      */
-    public void saveVariableQuartilesInSingleFile(String path, int thresholdUniqueValues, int thresholdTotalValues) throws IOException {
+    public void saveVariableQuartilesInSingleFile(String path, String output, int thresholdUniqueValues, int thresholdTotalValues) throws IOException {
         File file = new File(path);
-        if(file.isDirectory()) {
-            for (File resultSummary : file.listFiles()) {
-                if (!resultSummary.isDirectory() && resultSummary.getName().contains("_summary_") && !resultSummary.getName().startsWith(".")) {
-                    saveVariableQuartilesOfOneProjectInSingleFile(resultSummary, thresholdUniqueValues, thresholdTotalValues);
-                }
-            }
-        } else {
-            saveVariableQuartilesOfOneProjectInSingleFile(file, thresholdUniqueValues, thresholdTotalValues);
-        }
-    }
-
-
-    /**
-     * Save variables from one project in single file with variable name in one column and value in another
-     * @param file
-     * @throws IOException
-     */
-    private void saveVariableQuartilesOfOneProjectInSingleFile(File file, int thresholdUniqueValues, int thresholdTotalValues) throws IOException {
-        System.out.println("Processing : "+ file.getName());
         BufferedReader reader = new BufferedReader(new FileReader(file));
 
-        File resultFile = new File(new File(file.getParent()).getParent() + "/descriptive_stats_2/" + file.getName().substring(4, file.getName().indexOf(".txt_summary_")) + "_descriptive_stats.csv");
-        Files.deleteIfExists(resultFile.toPath());
-
+        File resultFile = new File(output);
         PrintWriter writer = new PrintWriter(resultFile, "UTF-8");
         writer.println("Name,min,1st quartile,median,3rd quartile,max,norm-min,norm-1st quartile,norm-median,norm-3rd quartile,norm-max");
 
@@ -77,6 +56,7 @@ public class VariableQuartiles {
         writer.close();
     }
 
+
     private double[] getPrimitiveArray(List<Double> variableValues) {
         Double [] values = new Double[variableValues.size()];
         variableValues.toArray(values);
@@ -96,15 +76,5 @@ public class VariableQuartiles {
         }
 
         return normalizedValues;
-    }
-
-    static final String ROOT =  Constants.RESULT_ROOT + Constants.SUMMARY_FOLDER;
-
-    public static void main(String[] args) throws IOException {
-        String fileName = "log_" + Constants.LODASH + ".txt_summary_results.txt";
-
-        VariableQuartiles intoFiles = new VariableQuartiles();
-        intoFiles.saveVariableQuartilesInSingleFile(ROOT, 1, 50);
-
     }
 }

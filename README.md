@@ -67,7 +67,18 @@ Ex: `variable1.csv`
 | Name|min|1st quartile|median|3rd quartile|max|norm 1st quartile|norm median|norm 3rd quartile|
 |-----|--:|-----------:|-----:|-----------:|--:|----------------:|----------:|----------------:|
 |var1 |-10.12|     -7.2|    -2|           3|11.23|           0.25|        0.4|              0.8| 
-|var2|12|71|201|312|1121||0.2|0.6|0.9| 
+|var2 | 12|          71|   201|         312| 1121|            0.2|        0.6|              0.9| 
 
 
+###Other util Classes
+
+####github
+This package contains classes to analyse GitHub usiing its APi.
+- List repositiories based on search query
+- List files based on the frequency of changes in given commits 
+- List commit ids with certain additions/delitions
+
+####cluster.em
+- EM CLustering algorithm implementation using Mixture of Gaussians
+- Gaussians per cluster is dynamic thus, automatically defined based on the cluster values
 

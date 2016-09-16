@@ -73,7 +73,7 @@ Ex: `variable1.csv`
 ###Other util Classes
 
 ####github
-This package contains classes to analyse GitHub usiing its APi.
+This package contains classes to analyse GitHub usiing its APi. (Include GITHUB_ACCESS_TOKEN in GithubConstants)
 - List repositiories based on search query
 - List files based on the frequency of changes in given commits 
 - List commit ids with certain additions/delitions

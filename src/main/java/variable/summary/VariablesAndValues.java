@@ -11,7 +11,7 @@ public class VariablesAndValues {
 
     public static void main(String[] args) throws IOException {
         if(args.length==0) {
-            System.out.println("Usage: <rawInstrumentLogfile> [OPTIONAL-summaryFilePath | DEFAULT- [rawInstrumentLogfile]summary.txt]");
+            System.out.println("Usage: <rawInstrumentLogfile> [OPTIONAL-summaryFilePath | DEFAULT- [rawInstrumentLogfile]summary.csv]");
         } else {
             File file = new File(args[0]);
             if (!file.isDirectory()) {
@@ -19,7 +19,7 @@ public class VariablesAndValues {
                 if(args.length==2) {
                     variablesAndValues.outputFile = args[1];
                 } else {
-                    variablesAndValues.outputFile = args[0] + "summary.txt";
+                    variablesAndValues.outputFile = args[0] + "summary.csv";
                 }
                 variablesAndValues.analyze(file.getAbsolutePath());
             }
@@ -101,7 +101,7 @@ public class VariablesAndValues {
                         variableName = variableName.substring(0, variableName.indexOf("}"));
 
                         String variableValue = singleExecution.split("->\\{")[1];
-                        variableValue = variableValue.substring(0, variableValue.indexOf("}"));
+                        variableValue = variableValue.substring(0, variableValue.lastIndexOf("}"));
 
                         if(singleMethodResults.containsKey(variableName)) {
                             singleMethodResults.get(variableName).add(variableValue);

@@ -84,9 +84,12 @@ public class VariableValuesIntoFiles {
                     (Integer.parseInt(lineContent[4]) == -1 || Integer.parseInt(lineContent[4]) >= thresholdTotalValues)) {
                 for (int i = 5; i < lineContent.length; i++) {
                     String[] values = lineContent[i].split(" x ");
-                    for (int j = 0; j < Integer.parseInt(values[1]); j++) {
-                        writer.println(variableName + "," + values[0]);
-                    }
+                    try {
+                        int valueInt = Integer.parseInt(values[1]);
+                        for (int j = 0; j < valueInt; j++) {
+                            writer.println(variableName + "," + values[0]);
+                        }
+                    } catch(NumberFormatException | ArrayIndexOutOfBoundsException ignored) {}
                 }
             }
         }

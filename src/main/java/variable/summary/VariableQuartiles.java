@@ -36,9 +36,11 @@ public class VariableQuartiles {
                 List<Double> variableValues = new ArrayList<>();
                 for (int i = 5; i < lineContent.length; i++) {
                     String[] values = lineContent[i].split(" x ");
-                    for (int j = 0; j < Integer.parseInt(values[1]); j++) {
-                        variableValues.add(Double.parseDouble(values[0]));
-                    }
+                    try {
+                        for (int j = 0; j < Integer.parseInt(values[1]); j++) {
+                            variableValues.add(Double.parseDouble(values[0]));
+                        }
+                    } catch (NumberFormatException | ArrayIndexOutOfBoundsException ignore) {}
                 }
 
                 double[] primitiveArray = getPrimitiveArray(variableValues);
